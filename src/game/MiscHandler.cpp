@@ -1095,6 +1095,9 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recv_data)
     if (!GetPlayer()->IsWithinDistInMap(player, INSPECT_DISTANCE, false))
         return;
 
+    if (_player->IsHostileTo(player))
+        return;
+
     uint32 talent_points = 0x3D;
     uint32 guid_size = player->GetPackGUID().size();
     WorldPacket data(SMSG_INSPECT_TALENT, 4 + talent_points);
@@ -1188,7 +1191,7 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recv_data)
 
     WorldPacket data(MSG_INSPECT_HONOR_STATS, 8 + 1 + 4 * 4);
     data << uint64(player->GetGUID());
-    data << uint8(player->GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY));
+    data << uint8(player->GetHighestPvPRankIndex());
     data << uint32(player->GetUInt32Value(PLAYER_FIELD_KILLS));
     data << uint32(player->GetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION));
     data << uint32(player->GetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION));

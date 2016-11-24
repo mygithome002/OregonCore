@@ -17247,13 +17247,13 @@ void Player::Whisper(const std::string& text, uint32 language, Player* rPlayer)
     BuildPlayerChat(&data, CHAT_MSG_WHISPER, text, language);
     rPlayer->GetSession()->SendPacket(&data);
 
-    // not send confirmation for addon messages
-    if (language != LANG_ADDON)
-    {
-        data.Initialize(SMSG_MESSAGECHAT, 200);
-        rPlayer->BuildPlayerChat(&data, CHAT_MSG_REPLY, text, language);
-        GetSession()->SendPacket(&data);
-    }
+    if (language == LANG_ADDON)
+        return;
+
+    data.Initialize(SMSG_MESSAGECHAT, 200);
+    rPlayer->BuildPlayerChat(&data, CHAT_MSG_REPLY, text, language);
+    GetSession()->SendPacket(&data);
+
 
     if (!isAcceptWhispers() && !(IsGameMaster() && rPlayer->IsGameMaster()))
     {
@@ -18221,6 +18221,16 @@ uint32 Player::GetMaxPersonalArenaRatingRequirement()
     return max_personal_rating;
 }
 
+uint8 Player::GetHighestPvPRankIndex()
+{
+    // Old rank index starts at 5, values below 5 are discontinued negative ranks
+    for (uint8 index = 18; index >= 5; --index)
+        if (HasTitle(index))
+            return index;
+
+    return 0;
+}
+
 void Player::UpdateHomebindTime(uint32 time)
 {
     // GMs never get homebind timer online
@@ -18945,6 +18955,11 @@ void Player::SendInitialPacketsBeforeAddToMap()
     data.Initialize(SMSG_TUTORIAL_FLAGS, 8 * 4);
     for (int i = 0; i < 8; ++i)
         data << uint32(GetTutorialInt(i));
+    GetSession()->SendPacket(&data);
+
+    data.Initialize(SMSG_INSTANCE_DIFFICULTY, 4 + 4);
+    data << uint32(GetMap()->GetDifficulty());
+    data << uint32(0);
     GetSession()->SendPacket(&data);
 
     SendInitialSpells();
